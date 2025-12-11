@@ -35,8 +35,7 @@ services:
       - TZ=Asia/Tokyo
     command: python3 proxy.py   # TODO: 中身を書く
     volumes:
-      - ./reverse_proxy:/app
-    working_dir: /app
+      - ./reverse_proxy/app:/app
 
   # ==========================
   # 被害者Webサーバ（バック側）

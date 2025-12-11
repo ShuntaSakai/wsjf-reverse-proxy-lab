@@ -4,7 +4,6 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV TZ=Asia/Tokyo
 
-# タイムゾーン設定
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         tzdata \
@@ -18,8 +17,6 @@ RUN apt-get update && \
 # 作業ディレクトリ
 WORKDIR /app
 
-# プロキシコード（後で作成）
 COPY . /app
 
-# デフォルトコマンド
 CMD ["python3", "proxy.py"]

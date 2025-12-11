@@ -18,6 +18,3 @@ RUN apt update && \
 
 # 作業ディレクトリ
 WORKDIR /workspace
-
-# CMD: コンテナ起動時にルーティング設定を実行し、その後コンテナを維持する
-CMD ["/bin/bash", "-c", "route add default gw 192.168.10.2 || (echo 'Routing failed, check Zeek IP' && false) ; tail -f /dev/null"]

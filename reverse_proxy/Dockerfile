@@ -14,7 +14,6 @@ RUN apt-get update && \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# 作業ディレクトリ
 WORKDIR /app
 
 COPY . /app

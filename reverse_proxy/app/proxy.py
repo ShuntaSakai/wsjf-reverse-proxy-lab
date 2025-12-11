@@ -35,7 +35,7 @@ victim-inline:80 に接続して、双方向にパイプする。
 """
 async def proxy_connection(front_reader: asyncio.StreamReader,
                         front_writer: asyncio.StreamWriter):
-    front_info = front_writer.get_extra_info("front_info") # 接続元情報を取得
+    front_info = front_writer.get_extra_info("peername") # 接続元情報を取得
     print(f"[proxy] new connection from {front_info}")
 
     try:

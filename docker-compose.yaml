@@ -1,0 +1,99 @@
+version: "3.9"
+
+services:
+  # ==========================
+  # 攻撃者クライアント（フロント側）
+  # ==========================
+  attacker-inline:
+    build: ./attacker
+    container_name: attacker-inline
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    networks:
+      front_net:
+        ipv4_address: 192.168.10.10
+    command: tail -f /dev/null
+    volumes:
+      - ./attacker/data:/workspace
+
+  # ==========================
+  # WSJF付きリバースプロキシ
+  # ==========================
+  reverse_proxy:
+    build: ./reverse_proxy
+    container_name: reverse_proxy
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    networks:
+      front_net:
+        ipv4_address: 192.168.10.30   # クライアント（攻撃者）側IP
+      back_net:
+        ipv4_address: 192.168.20.30   # サーバ（被害者）側IP
+    environment:
+      - TZ=Asia/Tokyo
+    command: python3 proxy.py   # TODO: 中身を書く
+    volumes:
+      - ./reverse_proxy:/app
+    working_dir: /app
+
+  # ==========================
+  # 被害者Webサーバ（バック側）
+  # ==========================
+  victim-inline:
+    build: ./victim
+    container_name: victim-inline
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    networks:
+      back_net:
+        ipv4_address: 192.168.20.20
+    command: apachectl -D FOREGROUND
+    volumes:
+      - ./victim/data:/var/www/html
+
+  # ==========================
+  # Zeek（バック側監視）
+  # ==========================
+  zeek-inline:
+    build: ./zeek
+    container_name: zeek-inline
+    networks:
+      back_net:
+        ipv4_address: 192.168.20.2
+      front_net:
+        ipv4_address: 192.168.10.2
+
+    # インライン監視を想定
+    sysctls:
+      net.ipv4.ip_forward: 1
+
+    environment:
+      - TZ=Asia/Tokyo
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    command: tail -f /dev/null
+    volumes:
+      - ./zeek/logs:/zeek-logs
+      - ./zeek/scripts:/zeek-scripts
+      - ./bin/zeek-color:/usr/local/bin/zeek-color
+
+networks:
+  # フロント側ネットワーク（攻撃者・クライアント側）
+  front_net:
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 192.168.10.0/24
+
+  # バック側ネットワーク（被害者・Webサーバ側）
+  back_net:
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 192.168.20.0/24

@@ -1,0 +1,12 @@
+# ログファイル
+zeek/logs/
+*.log
+
+# pcapファイル
+*.pcap
+
+# dockerなどの一時ファイル
+**/__pycache__/
+*.pyc
+*.swp
+*~

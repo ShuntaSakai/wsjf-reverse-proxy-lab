@@ -145,7 +145,7 @@ ip a
 attacker-inline → reverse_proxy 間のトラフィックを監視：
 ```bash
 cd /zeek-logs
-zeek-color -i eth0 /zeek-scripts/your_script.zeek
+zeek-color -i eth0 -C /zeek-scripts/your_script.zeek
 ```
 `eth0` が `front_net` 側インタフェースであると仮定した例です。
 
@@ -153,9 +153,11 @@ zeek-color -i eth0 /zeek-scripts/your_script.zeek
 reverse_proxy → victim-inline 間のトラフィックを監視：
 ```bash
 cd /zeek-logs
-zeek-color -i eth1 /zeek-scripts/your_script.zeek
+zeek-color -i eth1 -C /zeek-scripts/your_script.zeek
 ```
 `eth1` が `back_net` 側インタフェースであると仮定した例です。
+
+※ `-C` コマンドを付与することで、チェックサムの検証が無視され、壊れたパケットが届いても解析を継続することができます
 
 ---
 

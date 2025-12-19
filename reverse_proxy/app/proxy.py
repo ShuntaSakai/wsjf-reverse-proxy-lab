@@ -63,6 +63,8 @@ async def proxy_connection(front_reader: asyncio.StreamReader,
 
 
 async def main():
+    #TCPサーバーを起動
+    #新しい接続が来るたびに proxy_connection が呼ばれる。
     server = await asyncio.start_server(
         proxy_connection,
         host=LISTEN_HOST,

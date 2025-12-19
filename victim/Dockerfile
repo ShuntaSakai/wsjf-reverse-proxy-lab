@@ -17,12 +17,13 @@ RUN apt update && \
 
 RUN echo "ServerName victim" >> /etc/apache2/apache2.conf
 
+#Apacheの防御機能を有効化
 RUN a2enmod reqtimeout
 
 # HTTP ポート
 EXPOSE 80
 
-# コンテナ起動と同時に Apache をフォアグラウンド起動
+# コンテナ起動と同時に Apache をフォアグラウンド起動(止めずに)
 CMD ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
 
 WORKDIR /workspace

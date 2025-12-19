@@ -1,19 +1,30 @@
-services:
+services: #どんなコンテナを作るか
   # ==========================
   # 攻撃者クライアント（フロント側）
   # ==========================
-  attacker-inline:
+  attacker-inline: #定義スタート
+    container_name: attacker-inline #コンテナ名を固定
+
+    #attkcerフォルダのDockerfieを使う
+    #（docker-compose の build はディレクトリを指定すると、
+    #その中の Dockerfile を自動的に参照する仕様になっているため、
+    #使用するファイル名を明示する必要がない。)
     build: ./attacker
-    container_name: attacker-inline
+
     cap_add:
-      - NET_ADMIN
-      - NET_RAW
+      - NET_ADMIN #ネットワークのルーティングなどの設定を変更できる
+      - NET_RAW ##TCP/IPの中身を自分で書けるようになり、通常禁止されている攻撃が可能に
     networks:
       front_net:
         ipv4_address: 192.168.10.10
-    command: tail -f /dev/null
+    command: tail -f /dev/null #空のファイルを見続ける(コマンドの実行が終了しないことでコンテナを生き残らせ続けられる)
+
+    #本環境では volume 機能を用いて、
+    #攻撃者コンテナ内の作業ディレクトリ /workspace を
+    #ホスト側ディレクトリと共有することで、
+    #攻撃ログやパケットキャプチャを永続的に保存可能としている。
     volumes:
-      - ./attacker/data:/workspace
+      - ./attacker/data:/workspace 
 
   # ==========================
   # WSJF付きリバースプロキシ
@@ -33,7 +44,7 @@ services:
       - TZ=Asia/Tokyo
     command: python3 proxy.py   # TODO: 中身を書く
     volumes:
-      - ./reverse_proxy/app:/app
+      - ./reverse_proxy/app:/app # PCのフォルダappとコンテナ内のフォルダappを同じ中身に(ログやデータが残る)
 
   # ==========================
   # 被害者Webサーバ（バック側）
@@ -47,9 +58,9 @@ services:
     networks:
       back_net:
         ipv4_address: 192.168.20.20
-    command: apachectl -D FOREGROUND
+    command: apachectl -D FOREGROUND #Apacheサーバーを動かし続ける
     volumes:
-      - ./victim/data:/var/www/html
+      - ./victim/data:/var/www/html #ホストのフォルダdata内のhtmlファイルをサーバと同期させる(htmlを変更すれば実行中でも変更される)
 
   # ==========================
   # Zeek（バック側監視）
@@ -70,14 +81,14 @@ services:
       - NET_RAW
     command: tail -f /dev/null
     volumes:
-      - ./zeek/logs:/zeek-logs
-      - ./zeek/scripts:/zeek-scripts
-      - ./bin/zeek-color:/usr/local/bin/zeek-color
+      - ./zeek/logs:/zeek-logs #結果を保存しておく
+      - ./zeek/scripts:/zeek-scripts #zeekの検知ルールの変更が可能
+      - ./bin/zeek-color:/usr/local/bin/zeek-color #zeekのログを見やすく色づけ
 
 networks:
   # フロント側ネットワーク（攻撃者・クライアント側）
   front_net:
-    driver: bridge
+    driver: bridge #Docker 標準の「普通の LAN」を使う
     internal: true
     ipam:
       config:

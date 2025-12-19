@@ -14,8 +14,10 @@ RUN apt-get update && \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+#コンテナ内の作業フォルダ決定(cdも勝手に行われる)
 WORKDIR /app
 
+#プログラムを作業場所にコピー
 COPY . /app
 
 CMD ["python3", "proxy.py"]

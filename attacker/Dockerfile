@@ -1,5 +1,6 @@
 FROM kalilinux/kali-rolling
 
+#必要なものインストール
 RUN apt update && \
     apt install -y \
       iproute2 \
@@ -18,3 +19,6 @@ RUN apt update && \
 
 # 作業ディレクトリ
 WORKDIR /workspace
+
+#zeekで検知できないときにはルーティングを変更
+ip route add 192.168.10.30 via 192.168.10.2

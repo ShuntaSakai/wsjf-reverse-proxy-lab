@@ -19,3 +19,8 @@ WORKDIR /app
 COPY . /app
 
 CMD ["python3", "proxy.py"]
+
+# ルーティング設定
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]

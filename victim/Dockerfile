@@ -13,6 +13,7 @@ RUN apt update && \
       less \
       vim \
       nano \
+      iperf3 \
       && apt clean && rm -rf /var/lib/apt/lists/*
 
 RUN echo "ServerName victim" >> /etc/apache2/apache2.conf

@@ -15,3 +15,7 @@ RUN apt update && \
       && apt clean && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /zeek-logs /zeek-scripts
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]

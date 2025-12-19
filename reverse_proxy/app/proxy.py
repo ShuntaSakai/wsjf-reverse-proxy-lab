@@ -50,10 +50,10 @@ async def client_to_queue(reader, writer, session): # 非同期関数
             data = await reader.read(BUFFER_SIZE) # データが届くまで待機
             if not data:
                 break
-        
+            
             session.total_bytes += len(data)
             priority = session.get_priority_score()
-
+            
             # 優先度が低すぎる（スコアが高い）場合の切断ロジック
             # if (time.time() - session.start_time) > 5.0 and priority > 0.95:
             #     print(f"!!! [Guard] Terminating slow connection: {session.client_info}")

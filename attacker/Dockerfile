@@ -14,6 +14,7 @@ RUN apt update && \
       nmap \
       vim \
       nano \
+      iperf3 \
       && apt clean && rm -rf /var/lib/apt/lists/*
 
 # 作業ディレクトリ

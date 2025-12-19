@@ -14,5 +14,8 @@ RUN apt update && \
       vim \
       && apt clean && rm -rf /var/lib/apt/lists/*
 
-#ディレクトリを作成する
 RUN mkdir -p /zeek-logs /zeek-scripts
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]

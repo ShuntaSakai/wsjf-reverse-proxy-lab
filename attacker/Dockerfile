@@ -20,5 +20,7 @@ RUN apt update && \
 # 作業ディレクトリ
 WORKDIR /workspace
 
-#zeekで検知できないときにはルーティングを変更
-ip route add 192.168.10.30 via 192.168.10.2
+# ルーティング設定
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]

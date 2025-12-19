@@ -73,12 +73,15 @@ services: #どんなコンテナを作るか
         ipv4_address: 192.168.20.2
       front_net:
         ipv4_address: 192.168.10.2
-
     environment:
       - TZ=Asia/Tokyo
     cap_add:
       - NET_ADMIN
       - NET_RAW
+    sysctls:
+      net.ipv4.ip_forward: "1"
+      net.ipv4.conf.all.rp_filter: "0"
+      net.ipv4.conf.default.rp_filter: "0"
     command: tail -f /dev/null
     volumes:
       - ./zeek/logs:/zeek-logs #結果を保存しておく

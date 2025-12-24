@@ -4,6 +4,12 @@ import time
 HOST = "0.0.0.0"
 PORT = 5201
 
+'''
+これは何？：「受け取った順番をログに出す」
+reverse_proxy から届いたデータを読み、先頭4文字（例：0007）などのタグを抜き出して、RECV: 0007 t=... のように 受信順で表示する。
+docker logs -f seq-server でログを確認できる。
+'''
+
 def main():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

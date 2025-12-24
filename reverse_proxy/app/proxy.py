@@ -77,7 +77,7 @@ async def scheduler_loop(back_writer):
         try:
             await asyncio.sleep(0.05)
             tag = data[:4].decode(errors="ignore")
-            print(f"[Scheduler] send tag={tag} pri={priority:.6f} from {session.client_info}")
+            print(f"[Scheduler] send tag={tag} pri={priority:.6f} qsize={scheduling_queue.qsize()} from {session.client_info}")
             back_writer.write(data) # データをバックに書き込む
             await back_writer.drain() # 書き込みバッファが空になるまで待機
         except Exception as e:

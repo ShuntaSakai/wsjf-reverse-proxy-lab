@@ -1,17 +1,10 @@
 import asyncio # 処理を並行処理するためのライブラリ（参考記事：https://qiita.com/automation2025/items/797c23a7655898f61e7d (第8章)）
 import time # 時刻取得用
 
-# BACKNET_HOST = "victim-inline"  # back_net 側のホスト名（Docker の内部 DNS でコンテナ間から名前解決できる）
-# BACKNET_PORT = 80               # Apache 側のリッスンポート
-#LISTEN_HOST  = "0.0.0.0"        # front_net 側で待ち受け（全てのインターフェース）
-# LISTEN_PORT  = 80               # attacker がアクセスするポート
-
-# test
-BACKNET_HOST = "seq-server"
-BACKNET_PORT = 5201
-LISTEN_HOST  = "0.0.0.0"
-LISTEN_PORT  = 5201
-
+BACKNET_HOST = "victim-inline"  # back_net 側のホスト名（Docker の内部 DNS でコンテナ間から名前解決できる）
+BACKNET_PORT = 80               # Apache 側のリッスンポート
+LISTEN_HOST  = "0.0.0.0"        # front_net 側で待ち受け（全てのインターフェース）
+LISTEN_PORT  = 80               # attacker がアクセスするポート
 
 BUFFER_SIZE = 4096              # 一度に読み込む最大バイト数              
 
@@ -29,7 +22,7 @@ class ConnectionSession:
     def get_priority_score(self): # 優先度指標 = bits/sec
         duration = time.time() - self.start_time
         if duration < 0.1:
-            duration = 0.1
+            duration = 0.1  # 0除算防止
 
         bps = (self.total_bytes * 8) / duration  # ビット毎秒に変換
         self.last_score = 1.0 / (bps + 1.0) # bpsが大きいほどスコアが小さくなる（優先度が高くなる）
@@ -42,7 +35,7 @@ async def monitor_task():
         await asyncio.sleep(1)
         if not active_sessions:
             continue
-        
+    
         print("\n" + "="*50)
         print(f"{'Client Address':<25} | {'Score (lower is better)':<20}")
         print("-" * 50)
@@ -57,11 +50,14 @@ async def client_to_queue(reader, writer, session): # 非同期関数
             data = await reader.read(BUFFER_SIZE) # データが届くまで待機
             if not data:
                 break
+        
             session.total_bytes += len(data)
             priority = session.get_priority_score()
 
-            tag = data[:4].decode(errors="ignore")
-            print(f"[Enqueue] recv tag={tag} pri={priority:.6f} from {session.client_info}")
+            # 優先度が低すぎる（スコアが高い）場合の切断ロジック
+            # if (time.time() - session.start_time) > 5.0 and priority > 0.95:
+            #     print(f"!!! [Guard] Terminating slow connection: {session.client_info}")
+            #     break
 
             await scheduling_queue.put((priority, data, session)) # キューにデータを入れる(キューが満杯の場合は待機)
 
@@ -75,9 +71,7 @@ async def scheduler_loop(back_writer):
     while True:
         priority, data, session = await scheduling_queue.get() # キューにデータが入るまで非同期で待機
         try:
-            await asyncio.sleep(0.05)
-            tag = data[:4].decode(errors="ignore")
-            print(f"[Scheduler] send tag={tag} pri={priority:.6f} qsize={scheduling_queue.qsize()} from {session.client_info}")
+            print(f"[Scheduler] Sending data: Priority={priority:.6f} from {session.client_info}")
             back_writer.write(data) # データをバックに書き込む
             await back_writer.drain() # 書き込みバッファが空になるまで待機
         except Exception as e:

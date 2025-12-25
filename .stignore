@@ -1,0 +1,4 @@
+(?d).local/state/syncthing/**
+(?d).config/syncthing/**
+(?d).cache/**
+(?d).local/share/Trash/**

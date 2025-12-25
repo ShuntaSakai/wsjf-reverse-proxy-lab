@@ -13,7 +13,7 @@ LISTEN_HOST  = "0.0.0.0"
 LISTEN_PORT  = 5201
 
 
-BUFFER_SIZE = 4096              # 一度に読み込む最大バイト数              
+BUFFER_SIZE = 128              # 一度に読み込む最大バイト数              
 
 scheduling_queue = asyncio.PriorityQueue() # 全接続のデータを管理する優先度付きキュー(値の小さい順に取り出す)
 active_sessions = {} # 現在アクティブな接続セッションを管理する辞書 {peername: session_obj}
@@ -25,6 +25,7 @@ class ConnectionSession:
         self.start_time = time.time()
         self.total_bytes = 0
         self.last_score = 0.0
+        self.last_tag = "????"
 
     def get_priority_score(self): # 優先度指標 = bits/sec
         duration = time.time() - self.start_time
@@ -35,6 +36,14 @@ class ConnectionSession:
         self.last_score = 1.0 / (bps + 1.0) # bpsが大きいほどスコアが小さくなる（優先度が高くなる）
 
         return self.last_score # bpsが大きいほどスコアが小さくなる（優先度が高くなる）
+
+class Color:
+    YELLOW = '\033[33m'
+    GREEN  = '\033[32m'
+    RED    = '\033[31m'
+    CYAN   = '\033[36m'
+    RESET  = '\033[0m'
+    BOLD   = '\033[1m'
 
 async def monitor_task():
     """1秒おきに現在の接続スコアを一覧表示する(デバッグ用)"""
@@ -57,13 +66,22 @@ async def client_to_queue(reader, writer, session): # 非同期関数
             data = await reader.read(BUFFER_SIZE) # データが届くまで待機
             if not data:
                 break
+
+            # タグの抽出
+            raw_tag = data[:4].decode(errors="ignore")
+
+            if raw_tag.isdigit():
+                session.last_tag = raw_tag
+                display_tag = raw_tag
+            else:
+                display_tag = f"{session.last_tag}(cont)"
+
             session.total_bytes += len(data)
             priority = session.get_priority_score()
 
-            tag = data[:4].decode(errors="ignore")
-            print(f"[Enqueue] recv tag={tag} pri={priority:.6f} from {session.client_info}")
+            print(f"{Color.YELLOW}[Enqueue]{Color.RESET} recv tag={display_tag} pri={priority:.6f} from {session.client_info}")
 
-            await scheduling_queue.put((priority, data, session)) # キューにデータを入れる(キューが満杯の場合は待機)
+            await scheduling_queue.put((priority, data, session, display_tag)) # キューにデータを入れる(キューが満杯の場合は待機)
 
     except Exception as e:
         print(f"[client_to_queue] {e}")
@@ -73,11 +91,10 @@ async def client_to_queue(reader, writer, session): # 非同期関数
 async def scheduler_loop(back_writer):
     """キューから最も優先度が高いデータを取り出し、サーバへ送る"""
     while True:
-        priority, data, session = await scheduling_queue.get() # キューにデータが入るまで非同期で待機
+        priority, data, session, tag = await scheduling_queue.get() # キューにデータが入るまで非同期で待機
         try:
             await asyncio.sleep(0.05)
-            tag = data[:4].decode(errors="ignore")
-            print(f"[Scheduler] send tag={tag} pri={priority:.6f} qsize={scheduling_queue.qsize()} from {session.client_info}")
+            print(f"{Color.GREEN}[Scheduler]{Color.RESET} send tag={tag} pri={priority:.6f} qsize={scheduling_queue.qsize()} from {session.client_info}")
             back_writer.write(data) # データをバックに書き込む
             await back_writer.drain() # 書き込みバッファが空になるまで待機
         except Exception as e:
@@ -93,9 +110,12 @@ async def proxy_connection(front_reader: asyncio.StreamReader,
                         front_writer: asyncio.StreamWriter):
     front_info = front_writer.get_extra_info("peername") # 接続元情報を取得
     session = ConnectionSession(front_info)
-
     active_sessions[front_info] = session
-    print(f"[proxy] new connection from {front_info}")
+    # print(f"[proxy] new connection from {front_info}")
+
+    input_task = None
+    sched_task = None
+    resp_task = None
 
     try:
         back_reader, back_writer = await asyncio.open_connection(
@@ -118,18 +138,16 @@ async def proxy_connection(front_reader: asyncio.StreamReader,
                 await front_writer.drain()
 
         resp_task = asyncio.create_task(response_pipe())
-
         await asyncio.wait({input_task, resp_task}, return_when=asyncio.FIRST_COMPLETED)
 
     except Exception as e:
-        print(f"[proxy] failed to connect backnet: {e}")
-        front_writer.close()
-        return
+        print(f"{Color.RED}[proxy]{Color.RESET} failed to connect backnet: {e}")
     finally:
         active_sessions.pop(front_info, None)
         front_writer.close()
+
         for t in [input_task, sched_task, resp_task]:
-            if not t.done():
+            if t is not None and not t.done():
                 t.cancel()
         print(f"[proxy] Closed connection: {front_info}")
     # front -> back, back -> front を並列に動かす
@@ -148,7 +166,7 @@ async def proxy_connection(front_reader: asyncio.StreamReader,
 
 
 async def main():
-    asyncio.create_task(monitor_task())  # モニタリングタスクを起動
+    # asyncio.create_task(monitor_task())  # モニタリングタスクを起動
     server = await asyncio.start_server(
         proxy_connection,
         host=LISTEN_HOST,

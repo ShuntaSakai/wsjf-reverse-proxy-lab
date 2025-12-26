@@ -6,7 +6,7 @@ PORT = int(sys.argv[2]) if len(sys.argv) >= 3 else int(os.getenv("PORT", "5201")
 MODE = os.getenv("MODE", "mid")   # fast / mid / slow
 CID  = os.getenv("CID", "X")[:1]  # 1文字（F/S など）
 
-COUNT = 30
+COUNT = int(os.getenv("COUNT", "30"))
 PRESET = {
     "fast": {"min_sleep": 0.001, "max_sleep": 0.005, "pad": 2000},
     "mid":  {"min_sleep": 0.01,  "max_sleep": 0.2,   "pad": 0},

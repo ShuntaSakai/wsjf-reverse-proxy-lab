@@ -1,5 +1,0 @@
-# This directory is a Syncthing folder marker.
-# Do not delete.
-
-folderID: dmxda-iesfz
-created: 2025-12-25T18:12:38+09:00

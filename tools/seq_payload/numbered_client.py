@@ -8,7 +8,7 @@ CID  = os.getenv("CID", "X")[:1]  # 1文字（F/S など）
 
 COUNT = int(os.getenv("COUNT", "30"))
 PRESET = {
-    "fast": {"min_sleep": 0.001, "max_sleep": 0.005, "pad": 2000},
+    "fast": {"min_sleep": 0.02, "max_sleep": 0.05, "pad": 2000}, # "min_sleep": 0.001, "max_sleep": 0.005, "pad": 2000
     "mid":  {"min_sleep": 0.01,  "max_sleep": 0.2,   "pad": 0},
     "slow": {"min_sleep": 0.2,   "max_sleep": 0.5,   "pad": 0},
 }

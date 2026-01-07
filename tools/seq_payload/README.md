@@ -187,7 +187,7 @@ RECV: 0004 ...
 
 ## 6. ログ解析スクリプト
 
-`log_anaryzer.py` は `out/experiment_raw.log` を解析し、以下のグラフを生成します。
+`log_analyzer.py` は `out/experiment_raw.log` を解析し、以下のグラフを生成します。
 1. 各リクエストの待ち時間（Enqueue から Scheduler send まで）
 2. キューサイズの推移（Scheduler イベントの qsize）
 3. 各 CID ごとの待ち時間分布（ヒストグラム）
@@ -215,9 +215,9 @@ echo "done"
 ```
 COUNTの値が送信するペイロードの数になります。
 
-このコマンドを実行して、ログの収集が終わったら、`log_anaryzer.py`を実行して解析を行います。
+このコマンドを実行して、ログの収集が終わったら、`log_analyzer.py`を実行して解析を行います。
 ```bash
-python tools/seq_payload/log_anaryzer.py
+python tools/seq_payload/log_analyzer.py
 ```
 
 実行後に `out/analysis_{timestamp}.png` にグラフが保存されます。

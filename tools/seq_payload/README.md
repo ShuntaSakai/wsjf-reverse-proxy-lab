@@ -184,3 +184,40 @@ RECV: 0004 ...
 - **priority が小さいデータが先に送られる**
 
 という基準です。
+
+## 6. ログ解析スクリプト
+
+`log_anaryzer.py` は `out/experiment_raw.log` を解析し、以下のグラフを生成します。
+1. 各リクエストの待ち時間（Enqueue から Scheduler send まで）
+2. キューサイズの推移（Scheduler イベントの qsize）
+3. 各 CID ごとの待ち時間分布（ヒストグラム）
+
+- グラフは `out/analysis_{timestamp}.png` に保存されます。
+
+### 使い方
+最初に以下のコマンドを実行して `out/experiment_raw.log` に標準出力の内容を保存します。
+```bash
+docker compose logs -f --tail=0 --timestamps reverse_proxy | egrep --line-buffered '\[Enqueue\]|\[Scheduler\]|\[proxy\]|\[backnet\]' | stdbuf -oL tee -a out/experiment_raw.log | stdbuf -oL perl -pe 'if(/\[Enqueue\]/){$_="\e[32m".$_}elsif(/\[Scheduler\]/){$_="\e[31m".$_}s/(cid=F)/\e[34m$1\e[39m/g;s/(cid=S)/\e[33m$1\e[39m/g;s/\n/\e[0m\n/;'
+```
+
+その後、別のターミナルで以下のような2接続シミュレーションを開始するコマンドを実行します。
+```bash
+stty -tostop 2>/dev/null || true
+
+docker compose run --rm -T -e CID=F -e MODE=fast -e COUNT=600 seq-client \
+python numbered_client.py </dev/null \
+&
+docker compose run --rm -T -e CID=S -e MODE=slow -e COUNT=60 seq-client \
+python numbered_client.py </dev/null \
+
+wait
+echo "done"
+```
+COUNTの値が送信するペイロードの数になります。
+
+このコマンドを実行して、ログの収集が終わったら、`log_anaryzer.py`を実行して解析を行います。
+```bash
+python tools/seq_payload/log_anaryzer.py
+```
+
+実行後に `out/analysis_{timestamp}.png` にグラフが保存されます。

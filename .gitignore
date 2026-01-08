@@ -10,3 +10,9 @@ zeek/logs/
 *.pyc
 *.swp
 *~
+
+# 仮想環境
+**/venv/
+
+# 出力ディレクトリ
+out/

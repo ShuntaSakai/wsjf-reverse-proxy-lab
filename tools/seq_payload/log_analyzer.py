@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import re
 import os
-import sys
 from datetime import datetime
 
 # GUIがない環境でも必ず保存できるようにする
@@ -84,6 +83,7 @@ if result:
     # 統計情報の出力
     print("\n=== 待ち時間統計 (ms) ===")
     stats = combined.groupby('cid')['wait_time'].describe()
+    print(stats)
     
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(12, 15))
 

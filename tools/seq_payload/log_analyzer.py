@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import matplotlib.ticker as ticker
 import re
 import os
 from datetime import datetime
@@ -76,6 +77,12 @@ result = process_logs(input_file)
 if result:
     combined, df_sch_only = result
 
+    # 相対時間への変換
+    start_time = min(combined['ts_enq'].min(), df_sch_only['timestamp'].min())
+    combined['rel_time'] = (combined['ts_enq'] - start_time).dt.total_seconds()
+    df_sch_only = df_sch_only.copy()
+    df_sch_only['rel_time'] = (df_sch_only['timestamp'] - start_time).dt.total_seconds()
+
     unique_cids = sorted(combined['cid'].unique())
     cmap = plt.get_cmap('tab10')
     colors = {cid: cmap(i % 10) for i, cid in enumerate(unique_cids)}
@@ -90,20 +97,22 @@ if result:
     # 1. 待ち時間のプロット
     for cid in combined['cid'].unique():
         subset = combined[combined['cid'] == cid]
-        ax1.scatter(subset['ts_enq'], subset['wait_time'], label=f'CID: {cid}', s=15, alpha=0.6)
+        ax1.scatter(subset['rel_time'], subset['wait_time'], label=f'CID: {cid}', s=15, alpha=0.6)
+
+    ax1.xaxis.set_major_locator(ticker.MultipleLocator(1.0))
+    ax1.xaxis.set_minor_locator(ticker.MultipleLocator(0.5))
     ax1.set_ylabel('Wait Time (ms)')
     ax1.set_title('Request Wait Time Over Time')
     ax1.legend()
+    ax1.grid(True, which='both', linestyle='--', alpha=0.5)
     ax1.grid(True)
-    ax1.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
 
     # 2. キューサイズのプロット
-    ax2.plot(df_sch_only['timestamp'], df_sch_only['qsize'], color='black', label='Queue Size', linewidth=1)
+    ax2.plot(df_sch_only['rel_time'], df_sch_only['qsize'], color='black', label='Queue Size', linewidth=1)
     ax2.set_ylabel('Queue Size')
     ax2.set_title('Queue Size Trend')
     ax2.legend()
     ax2.grid(True)
-    ax2.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
 
     # 3. 待ち時間の分布（ヒストグラム）
     for cid in unique_cids:

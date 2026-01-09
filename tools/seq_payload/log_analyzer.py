@@ -6,6 +6,8 @@ import re
 import os
 from datetime import datetime
 
+# グラフ化
+
 # GUIがない環境でも必ず保存できるようにする
 import matplotlib
 matplotlib.use("Agg")

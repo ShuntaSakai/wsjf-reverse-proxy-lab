@@ -74,17 +74,21 @@ async def client_to_queue(reader: asyncio.StreamReader,
             if not line:
                 break
 
+            msg_bytes = len(line)
+
             session.total_bytes += len(line)
             priority = session.get_priority_score()
-
-            tag, cid = parse_tag_cid(line)
-            print(f"[Enqueue]  tag={tag} cid={cid} pri={priority:.6f} from {session.client_info}")
 
             async with seq_lock:
                 seq_state["v"] += 1
                 seq = seq_state["v"]
 
-            # PriorityQueue: (priority, seq, data, session)
+            tag, cid = parse_tag_cid(line)
+            print(
+                f"[Enqueue]  tag={tag} cid={cid} pri={priority:.6f} bytes={msg_bytes} "
+                f"seq={seq} from {session.client_info}"
+            )
+
             await scheduling_queue.put((priority, seq, line, session))
 
     except Exception as e:
@@ -130,11 +134,9 @@ async def scheduler_loop():
     while True:
         priority, seq, data, session = await scheduling_queue.get()
         try:
-            # デモ用：少し遅らせる（並び替えが見えやすい）
-            await asyncio.sleep(0.05)
-
             tag, cid = parse_tag_cid(data)
-            print(f"[Scheduler] tag={tag} cid={cid} pri={priority:.6f} seq={seq} qsize={scheduling_queue.qsize()}")
+            msg_bytes = len(data)
+            print(f"[Scheduler] tag={tag} cid={cid} pri={priority:.6f} seq={seq} qsize={scheduling_queue.qsize()} bytes={msg_bytes}")
 
             try:
                 back_writer.write(data)

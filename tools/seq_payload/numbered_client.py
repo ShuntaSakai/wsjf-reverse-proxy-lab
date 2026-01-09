@@ -4,7 +4,7 @@ HOST = sys.argv[1] if len(sys.argv) >= 2 else os.getenv("HOST", "reverse_proxy")
 PORT = int(sys.argv[2]) if len(sys.argv) >= 3 else int(os.getenv("PORT", "5201"))
 
 MODE = os.getenv("MODE", "mid")   # fast / mid / slow
-CID  = os.getenv("CID", "X")[:1]  # 1文字（F/S など）
+CID  = os.getenv("CID", "X")  # 2文字（F1/S2 など）
 
 COUNT = int(os.getenv("COUNT", "30"))
 PRESET = {

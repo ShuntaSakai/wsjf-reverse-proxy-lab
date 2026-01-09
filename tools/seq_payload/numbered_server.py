@@ -5,7 +5,6 @@ import threading
 HOST = "0.0.0.0"
 PORT = 5201
 
-# 複数スレッドからの print が混ざらないようにする
 print_lock = threading.Lock()
 
 def log(msg: str):
@@ -27,13 +26,31 @@ def handle_conn(conn: socket.socket, addr):
                 if not line:
                     continue
 
-                # 期待フォーマット例: "0001 F t=... ...."
-                parts = line.split(b" ", 2)
+                # 期待フォーマット:
+                #   b"0001 F t=170... xxxxx..."
+                # maxsplit=3 -> [tag, cid, t=..., pad...]
+                parts = line.split(b" ", 3)
                 tag = parts[0].decode(errors="replace") if len(parts) >= 1 else "????"
                 cid = parts[1].decode(errors="replace") if len(parts) >= 2 else "?"
+                tfield = parts[2].decode(errors="replace") if len(parts) >= 3 else ""
+                pad_bytes = parts[3] if len(parts) >= 4 else b""
+                pad_len = len(pad_bytes)
+
+                # 受信した1行の長さ（改行除く）
+                payload_no_nl = len(line)
+                # 送信されたペイロード（改行含む）として数えるなら +1
+                payload_bytes = payload_no_nl + 1
+
+                # ヘッダ部（tag cid t=... まで＋pad前のスペース含む）の長さを実測
+                header_len = payload_no_nl - pad_len
+
                 ts = time.time()
 
-                log(f"[server] {ts:.6f} addr={addr} RECV tag={tag} cid={cid} len={len(line)}")
+                # 解析しやすいように key=value 形式で出す
+                log(
+                    f"{ts:.6f} [RECV] tag={tag} cid={cid} {tfield} "
+                    f"bytes={payload_bytes} bytes_no_nl={payload_no_nl} header={header_len} pad={pad_len}"
+                )
     except Exception as e:
         log(f"[server] error addr={addr}: {e!r}")
     finally:

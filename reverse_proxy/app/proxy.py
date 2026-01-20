@@ -31,8 +31,9 @@ class ConnectionSession:
         if duration < 0.1:
             duration = 0.1
         bps = (self.total_bytes * 8) / duration
-        self.last_score = 1.0 / (bps + 1.0)
-        return self.last_score
+        # self.last_score = 1.0 / (bps + 1.0)
+        #return self.last_score
+        return bps
 
 
 async def monitor_task():
@@ -134,6 +135,7 @@ async def scheduler_loop():
     while True:
         priority, seq, data, session = await scheduling_queue.get()
         try:
+            await asyncio.sleep(0.05) # 遅延
             tag, cid = parse_tag_cid(data)
             msg_bytes = len(data)
             print(f"[Scheduler] tag={tag} cid={cid} pri={priority:.6f} seq={seq} qsize={scheduling_queue.qsize()} bytes={msg_bytes}")

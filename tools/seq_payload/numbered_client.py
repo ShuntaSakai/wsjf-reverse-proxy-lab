@@ -10,13 +10,21 @@ COUNT = int(os.getenv("COUNT", "30"))
 PRESET = {
     "fast": {"min_sleep": 0.02, "max_sleep": 0.05, "pad": 2000}, # "min_sleep": 0.001, "max_sleep": 0.005, "pad": 2000
     "mid":  {"min_sleep": 0.01,  "max_sleep": 0.2,   "pad": 0},
-    "slow": {"min_sleep": 0.2,   "max_sleep": 0.5,   "pad": 0},
+    "slow": {"min_sleep": 0.05,   "max_sleep": 0.08,   "pad": 1000},
 }
 if MODE not in PRESET:
     print("MODE must be fast|mid|slow")
     sys.exit(1)
 
 cfg = PRESET[MODE]
+# --- optional override (for sweep) ---
+pad_override = os.getenv("PAD")
+if pad_override is not None:
+    try:
+        cfg = dict(cfg)          # avoid mutating PRESET
+        cfg["pad"] = int(pad_override)
+    except ValueError:
+        pass
 pad = b"x" * cfg["pad"]
 
 def main():

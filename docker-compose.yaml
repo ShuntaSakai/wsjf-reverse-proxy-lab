@@ -31,7 +31,7 @@ services:
         ipv4_address: 192.168.20.30   # サーバ（被害者）側IP
     environment:
       - TZ=Asia/Tokyo
-    command: python3 proxy.py   # TODO: 中身を書く
+    command: python3 proxy_nowsjf.py   # TODO: 中身を書く
     volumes:
       - ./reverse_proxy/app:/app
 
